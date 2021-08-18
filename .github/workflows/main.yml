@@ -1,0 +1,39 @@
+name: download-test
+#自动更新trcker版本----最大16G
+on:
+  #gollum
+  workflow_dispatch: # 手动触发
+jobs:
+  AutoDownloaderProcess:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2.1.0
+    - name: Rclone Install
+      run: curl https://rclone.org/install.sh | sudo bash
+    - name: Delete workflow runs
+      uses: GitRML/delete-workflow-runs@main
+      with:
+        retain_days: 1
+        keep_minimum_runs: 3
+    - name: Inject Rclone&Aria2 config
+      run: |
+        mkdir -p ~/.config/rclone/
+        cat >  ~/.config/rclone/rclone.conf  << EOF
+        ${{ secrets.RCLONE_CONF }}
+        EOF
+        cd ~/
+    - name: FFmpeg
+      run: |
+        sudo apt update
+        sudo apt install ffmpeg
+    - name: downloads
+      run: |
+        cd ~/
+        mkdir -p ~/downloads
+        chmod +x ~/downloads -R
+        cd /home/runner/downloads
+        ffmpeg -threads 50 -i "http://valipl-vip.cp31.ott.cibntv.net/6977338041F3C719770DA3227/05000C00005B95CECD73FD605017056465CD67-37AE-41A0-81D1-CF21E6AB3283.m3u8?ccode=03010101&duration=1434&expire=18000&psid=750718b6c014d1cd50f47cf9b83892ce43346&ups_client_netip=2782706c&ups_ts=1629277179&ups_userid=945014696&utid=YNf9dwAAACkDAAfsl3162p6r&vid=XMzE3MzA2Mzgw&vkey=B3566faa4371623f5ef5a7d0b89f9cbed&sm=1&operate_type=1&dre=u38&si=78&eo=0&dst=1&iv=1&s=fcbf969861ad11e0bea1&type=mp5hd4v3&bc=2&t=f23e150f46e527d&cug=1&rid=20000000965C617B697D6B7550BDCFFBCC90ACB402000000&h265=1" -c copy -movflags +faststart 01.mp4
+    - name: Rclone Synchronizing file
+      run: |
+        rclone copy -P /home/runner/downloads mjj:heroku
+
